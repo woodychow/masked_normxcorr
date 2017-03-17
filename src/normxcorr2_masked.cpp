@@ -175,7 +175,6 @@ int Xcorr_opencv::CalXcorr()
         optMovingMask = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
         optFixedSquared = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
         optMovingSquared = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
-        double t = (double)getTickCount();
         for(int j = 0; j < sbgr_fixedImage[i].rows; j++)
         {
             for(int k = 0; k < sbgr_fixedImage[i].cols; k++)
@@ -204,9 +203,7 @@ int Xcorr_opencv::CalXcorr()
                 optMovingMask.at<float>(j,k) = sbgr_movingMask[i].at<unsigned char>(j,k);
             }
         }
-        t = (double)getTickCount() - t;
-        printf("\t---------- %g ms\n", t*1000/getTickFrequency());
-        t = (double)getTickCount();
+        double t = (double)getTickCount();
         CalculateOneChannelXcorr(i);
         t = (double)getTickCount() - t;
         printf("\tCalculated cross-correlation for one channel in %g ms\n", t*1000/getTickFrequency());
@@ -309,9 +306,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
         requiredFractionOfOverlappingPixels * maximumNumberOfOverlappingPixels
     );
 
-    double start = getTickCount();
     PostProcessing(C, numerator, denom, tol, -1, 1, numberOfOverlapMaskedPixels, this->requiredNumberOfOverlappingPixels);
-    printf(">>>>>>>>>>> %f\n", (getTickCount() - start)*1000/getTickFrequency());
 
     // Crop out the correct size.
     C_result[curChannel] = C(Range(0,combinedSize[0]),Range(0,combinedSize[1]));
@@ -328,14 +323,16 @@ int Xcorr_opencv::PostProcessing(cv::Mat &matC, cv::Mat &matNumerator, cv::Mat &
     {
         const float *numberOfOverlapMaskedPixelsRow = numberOfOverlapMaskedPixels.ptr<float>(i);
         float *matCRow = matC.ptr<float>(i);
+        const double *matDenomRow = matDenom.ptr<double>(i);
+        const float *matNumeratorRow = matNumerator.ptr<float>(i);
         for(int j = 0; j < matDenom.cols;j++)
         {
             if (numberOfOverlapMaskedPixelsRow[j] < minimumOverlapSize) {
                 matCRow[j] = 0;
             } else {
-                if(std::abs(matDenom.at<double>(i,j)) > tol)
+                if(std::abs(matDenomRow[j]) > tol)
                 {
-                    matCRow[j] = matNumerator.at<float>(i,j) / matDenom.at<double>(i,j);
+                    matCRow[j] = matNumeratorRow[j] / matDenomRow[j];
                 }
                 if(matCRow[j] > maximum)
                 {
@@ -364,6 +361,8 @@ double Xcorr_opencv::MaxAbsValue(cv::Mat &matImage )
 //calculate the IFFT of Image_FFT and return the result in Image_mat.
 int Xcorr_opencv::FFT_opencv(const cv::Mat &Image_mat, IplImage *Image_FFT, int sign, int nonzerorows)
 {
+    // IPP DFT function is only called when nonzerorows = 0
+    nonzerorows = 0;
     if(sign == FFT_SIGN_TtoF)
     {
         IplImage *dst = Image_FFT;
