@@ -153,7 +153,7 @@ statistics(cv::Mat CC, int topK) {
             Mat_elt e;
             e.i = i;
             e.j = j;
-            e.value = CC.at<double>(i,j);
+            e.value = CC.at<float>(i,j);
             data.push_back(e);
         }
     }
@@ -371,8 +371,8 @@ main (int argc, char **argv)
         {
             for (int j = 0; j < CC.cols; j++)
             {
-                fprintf(ccfile,"%0.6f\t",CC.at<double>(i,j));
-                fprintf(overlapfile,"%0.0f\t",overlap.at<double>(i,j));
+                fprintf(ccfile,"%0.6f\t",CC.at<float>(i,j));
+                fprintf(overlapfile,"%0.0f\t",overlap.at<float>(i,j));
             }
             fprintf(ccfile,"\n");
             fprintf(overlapfile,"\n");
