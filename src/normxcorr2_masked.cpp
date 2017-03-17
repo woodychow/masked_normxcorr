@@ -51,10 +51,10 @@ Xcorr_opencv::~Xcorr_opencv()
 
 //Initializing some member variables before calculation
 int Xcorr_opencv::Initialization(
-    string fixedImageName,
-    string fixedMaskName,
-    string movingImageName,
-    string movingMaskName,
+    const std::string &fixedImageName,
+    const std::string &fixedMaskName,
+    const std::string &movingImageName,
+    const std::string &movingMaskName,
     double requiredFractionOfOverlappingPixels,
     double requiredNumberOfOverlappingPixels
 ){
@@ -70,10 +70,10 @@ int Xcorr_opencv::Initialization(
     cv::Mat movingMask = cv::imread(movingMaskName.c_str());
 
     // print dimensions
-    cout << "Fixed image (scene): " << fixedImageName << ": " << fixedImage.size() << endl;
-    cout << "Fixed mask (scene mask): " << fixedMaskName << ": " << fixedMask.size() << endl;
-    cout << "Moving image (template): " << movingImageName << ": " << movingImage.size() << endl;
-    cout << "Moving mask (template mask): " <<  movingMaskName << ": " << movingMask.size() << endl;
+    std::cout << "Fixed image (scene): " << fixedImageName << ": " << fixedImage.size() << std::endl;
+    std::cout << "Fixed mask (scene mask): " << fixedMaskName << ": " << fixedMask.size() << std::endl;
+    std::cout << "Moving image (template): " << movingImageName << ": " << movingImage.size() << std::endl;
+    std::cout << "Moving mask (template mask): " <<  movingMaskName << ": " << movingMask.size() << std::endl;
 
     channelnum = fixedImage.channels();
 
@@ -116,8 +116,8 @@ int Xcorr_opencv::Initialization(
 
     fnorm = double(1) * double(optimalSize[0]) * double(optimalSize[1]) / 2.0;
 
-    cout << "Dimensions of combined image: " << combinedSize[0] <<" x " << combinedSize[1] << endl;
-    cout << "Optimal larger dimensions for fast DFT: " << optimalSize[0] <<" x " << optimalSize[1] << endl;
+    std::cout << "Dimensions of combined image: " << combinedSize[0] <<" x " << combinedSize[1] << std::endl;
+    std::cout << "Optimal larger dimensions for fast DFT: " << optimalSize[0] <<" x " << optimalSize[1] << std::endl;
 
     // split image into separate channel images
     sbgr_fixedImage.resize(channelnum);

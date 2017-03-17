@@ -45,7 +45,6 @@ namespace cv {
 #define FFT_SIGN_FtoT -1
 #define EPS 0.0000000000000002204
 
-using namespace std;
 using namespace cv;
 
 /**
@@ -87,13 +86,13 @@ class Xcorr_opencv {
         int channelnum;
 
         /** Channels of splitted fixedImage. (sbgr_fixedImage[0] = blue channel of fixedImage.) */
-        vector<cv::Mat> sbgr_fixedImage;
+        std::vector<cv::Mat> sbgr_fixedImage;
         /** Channels of splitted fixedMask. */
-        vector<cv::Mat> sbgr_fixedMask;
+        std::vector<cv::Mat> sbgr_fixedMask;
         /** Channels of splitted movingImage. */
-        vector<cv::Mat> sbgr_movingImage;
+        std::vector<cv::Mat> sbgr_movingImage;
         /** Channels of splitted movingMask. */
-        vector<cv::Mat> sbgr_movingMask;
+        std::vector<cv::Mat> sbgr_movingMask;
 
         /** 
           Scaled fixedImage with optimized size. 
@@ -128,9 +127,9 @@ class Xcorr_opencv {
           Relative intensity of all channels' masked correlation. 
           One element of C_result stores the NCC matrix for one channel.
          */
-        vector<cv::Mat> C_result;
+        std::vector<cv::Mat> C_result;
         /** Number of overlap masked pixels. */
-        vector<cv::Mat> numberOfOverlapMaskedPixels_result;
+        std::vector<cv::Mat> numberOfOverlapMaskedPixels_result;
 
         /** The combined size of fixedImage and movingImage*/
         int combinedSize[2];
@@ -183,10 +182,10 @@ class Xcorr_opencv {
           @param requiredFractionOfOverlappingPixels required fraction of overlapping pixels
          */
         int Initialization(
-            string fixedImageName,
-            string fixedMaskName,
-            string movingImageName,
-            string movingMaskName,
+            const std::string &fixedImageName,
+            const std::string &fixedMaskName,
+            const std::string &movingImageName,
+            const std::string &movingMaskName,
             double requiredFractionOfOverlappingPixels,
             double requiredNumberOfOverlappingPixels
         );

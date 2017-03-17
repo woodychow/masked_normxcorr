@@ -111,7 +111,7 @@ bool Mat_elt_cmp(const Mat_elt& x, const Mat_elt& y) { return (x.value > y.value
 
 int
 is_file_openable (const std::string& filename) {
-    ifstream my_file(filename.c_str(), ios::in);
+    std::ifstream my_file(filename.c_str(), std::ios::in);
     return my_file.good();
 }
 
@@ -315,10 +315,10 @@ main (int argc, char **argv)
 
     Xcorr_opencv *p_xcorr = new Xcorr_opencv;
     p_xcorr->Initialization(
-        string(fixedImageName),
-        string(fixedMaskName),
-        string(movingImageName),
-        string(movingMaskName),
+        fixedImageName,
+        fixedMaskName,
+        movingImageName,
+        movingMaskName,
         requiredFractionOfOverlappingPixels,
         requiredNumberOfOverlappingPixels
     );
@@ -329,8 +329,8 @@ main (int argc, char **argv)
     printf("Total cross-correlation time for all channels: %g ms\n\n", t*1000/getTickFrequency());
     t = (double)getTickCount();
 
-    vector<cv::Mat> CC_vec;
-    vector<cv::Mat> overlap_vec;
+    std::vector<cv::Mat> CC_vec;
+    std::vector<cv::Mat> overlap_vec;
     cv::Mat CC;
     cv::Mat overlap;
     cv::Mat CC_blend;
@@ -354,11 +354,11 @@ main (int argc, char **argv)
         // write xcorr image to disk
         std::string outputChannelImageBasename;
         if (dirname.length() > 0) {
-            outputChannelImageBasename = dirname + "/" + basename + "_" + boost::lexical_cast<string>(ch);
+            outputChannelImageBasename = dirname + "/" + basename + "_" + boost::lexical_cast<std::string>(ch);
         } else {
-            outputChannelImageBasename = basename + "_" + boost::lexical_cast<string>(ch);
+            outputChannelImageBasename = basename + "_" + boost::lexical_cast<std::string>(ch);
         }
-        cout << "Writing image " << outputChannelImageBasename + extension << " ... " << endl;
+        std::cout << "Writing image " << outputChannelImageBasename + extension << " ... " << std::endl;
         write_scaled_image(CC, (outputChannelImageBasename + extension).c_str());
 
         // writing xcorr matrices to disk
@@ -366,7 +366,7 @@ main (int argc, char **argv)
         std::string overlapMatrixChannelName = (outputChannelImageBasename + "_overlap_matrix.tsv");
         FILE* ccfile = fopen(xcorrMatrixChannelName.c_str(),"w+t"); // overwrite mode
         FILE* overlapfile = fopen(overlapMatrixChannelName.c_str(),"w+t");
-        cout << "Writing numerical matrices " << xcorrMatrixChannelName << " and " << overlapMatrixChannelName << " ... " << endl;
+        std::cout << "Writing numerical matrices " << xcorrMatrixChannelName << " and " << overlapMatrixChannelName << " ... " << std::endl;
         for (int i = 0; i < CC.rows; i++)
         {
             for (int j = 0; j < CC.cols; j++)
@@ -388,7 +388,7 @@ main (int argc, char **argv)
     } else {
         outputBlendedImageName = basename + extension;
     }
-    cout << "Writing blended correlation matrix " << outputBlendedImageName << " ..." << endl;
+    std::cout << "Writing blended correlation matrix " << outputBlendedImageName << " ..." << std::endl;
     addWeighted(CC_vec[0],1.0/3,CC_vec[1],1.0/3,0,CC_blend);
     addWeighted(CC_blend,1.0,CC_vec[2],1.0/3,0,CC_blend);
     write_scaled_image(CC_blend, outputBlendedImageName.c_str());
