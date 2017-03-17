@@ -252,7 +252,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     cv::mulSpectrums(optMovingImage_FFT,optFixedImage_FFT,numerator_FFT,0);
     FFT_opencv( numerator_FFT, numerator, FFT_SIGN_FtoT, optimalCvsize.height);
 
-    numerator = numerator -( (maskCorrelatedFixed.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
+    numerator -= ( (maskCorrelatedFixed.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
 
     optFixedSquared = optFixedImage.mul(optFixedImage);
     FFT_opencv( optFixedSquared, optFixedSquared_FFT,FFT_SIGN_TtoF, sbgr_fixedImage[0].rows);
@@ -262,7 +262,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     cv::mulSpectrums(optMovingMask_FFT,optFixedSquared_FFT,fixedDenom_FFT,0);
     FFT_opencv( fixedDenom_FFT, fixedDenom, FFT_SIGN_FtoT, optimalCvsize.height);
 
-    fixedDenom = fixedDenom - ((maskCorrelatedFixed.mul(maskCorrelatedFixed)) / numberOfOverlapMaskedPixels);
+    fixedDenom -= ((maskCorrelatedFixed.mul(maskCorrelatedFixed)) / numberOfOverlapMaskedPixels);
     ThresholdLower(fixedDenom,0);
 
     optMovingSquared = optMovingImage.mul(optMovingImage);
@@ -273,7 +273,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     cv::mulSpectrums(optFixedMask_FFT,optMovingSquared_FFT,movingDenom_FFT,0);
     FFT_opencv( movingDenom_FFT, movingDenom, FFT_SIGN_FtoT, optimalCvsize.height);
 
-    movingDenom = movingDenom - ((maskCorrelatedRotatedMoving.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
+    movingDenom -= ((maskCorrelatedRotatedMoving.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
     ThresholdLower(movingDenom,0);
 
     cv::Mat denom = fixedDenom.mul(movingDenom);
