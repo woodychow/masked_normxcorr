@@ -148,24 +148,6 @@ class Xcorr_opencv {
         int PostProcessing(cv::Mat &matC, cv::Mat &matNumerator, cv::Mat &matDenom, double tol, double minimum, double maximum, cv::Mat &numberOfOverlapMaskedPixels, double minimumOverlapSize);
 
         /**
-          Divide matNumerator by matDenom when the element of matDenom is nonzero; 
-          otherwise, the corresponding element of matNumerator is unchanged. 
-          Return the relative intensity of masked correlation in matC.
-
-          @param matc The relative intensity of masked correlation
-          @param matNumerator The convolution of movingImage and fixedImage
-          @param matDenom The product of fixedDenom and movingDenom. fixedDenom is the convolution of movingMask and squared fixedImage. movingDenom is the convolution of fixedMask and squared movingImage.
-          @param tol (tolerance) is the minimum positive number. Any number whose absolute value is below tol shall be considered zero.
-         */
-        int DivideNonZeroElem(cv::Mat &matC, cv::Mat &matNumerator, cv::Mat &matDenom, double tol);
-
-        /**
-          Return sum of all entries in matrix.
-          @param matImage The matrix of an image
-         */
-        double MatrixSum(cv::Mat &matImage);
-
-        /**
           Return maximum absolute value of all entries in matrix.
           @param matImage The matrix of an image
          */
@@ -234,7 +216,7 @@ class Xcorr_opencv {
           @param sign A sign for designating FFT or IFFT calculation
           @param nonzerorows The expected rows of Image_FFT in FFT calculation or Image_mat in IFFT calculation. A appropriate rows can speed up the calculation.
          */
-        int FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, int nonzerorows=0);
+        int FFT_opencv(const cv::Mat &Image_mat, IplImage *Image_FFT, int sign, int nonzerorows=0);
 
         /**
           Get the results of one channel.

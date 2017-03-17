@@ -343,37 +343,6 @@ int Xcorr_opencv::PostProcessing(cv::Mat &matC, cv::Mat &matNumerator, cv::Mat &
     return 0;
 }
 
-// Divide matNumerator by matDenom elementwise when the corresponding element of matDenom is nonzero, 
-// Otherwise, the corresponding element of matNumerator is unchanged.
-int Xcorr_opencv::DivideNonZeroElem(cv::Mat &matC, cv::Mat &matNumerator, cv::Mat &matDenom, double tol)
-{
-    for(int i = 0; i < matDenom.rows;i++)
-    {
-        for(int j = 0; j < matDenom.cols;j++)
-        {
-            if(std::abs(matDenom.at<double>(i,j)) > tol)
-            {
-                matC.at<double>(i,j) = matNumerator.at<double>(i,j) / matDenom.at<double>(i,j);
-            }
-        }
-    }
-    return 0;
-}
-
-// Return sum of all values in the matrix
-double Xcorr_opencv::MatrixSum(cv::Mat &matImage)
-{
-    double sum = 0;
-    for(int i = 0; i < matImage.rows; i++)
-    {
-        for(int j = 0; j < matImage.cols; j++)
-        {
-            sum += matImage.at<double>(i,j);
-        }
-    }
-    return sum;
-}
-
 // Return maximum absolute value of all elements in matrix.
 double Xcorr_opencv::MaxAbsValue(cv::Mat &matImage )
 {
@@ -385,13 +354,13 @@ double Xcorr_opencv::MaxAbsValue(cv::Mat &matImage )
 //Calculate the FFT of image Image_mat and return the result in Image_FFT 
 //if sign equals to FFT_SIGN_TtoF. If sign equals to FFT_SIGN_FtoT, 
 //calculate the IFFT of Image_FFT and return the result in Image_mat.
-int Xcorr_opencv::FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, int nonzerorows)
+int Xcorr_opencv::FFT_opencv(const cv::Mat &Image_mat, IplImage *Image_FFT, int sign, int nonzerorows)
 {
     if(sign == FFT_SIGN_TtoF)
     {
         IplImage *dst = Image_FFT;
-        IplImage Image_Ipl = IplImage(Image_mat);
-        IplImage *src = &Image_Ipl;
+        const IplImage Image_Ipl = IplImage(Image_mat);
+        const IplImage *src = &Image_Ipl;
         {   
              IplImage *image_Re = 0, *image_Im = 0, *Fourier = 0;
              image_Re = cvCreateImage(cvGetSize(src), IPL_DEPTH_64F, 1);  
@@ -414,11 +383,10 @@ int Xcorr_opencv::FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, 
     }
     else
     {
-        IplImage *ImageRe;
         IplImage *ImageIm;
         IplImage *dst;
         IplImage Image_Ipl = IplImage(Image_mat);
-        ImageRe = &Image_Ipl;
+        IplImage *ImageRe = &Image_Ipl;
         ImageIm = cvCreateImage(cvGetSize(ImageRe),IPL_DEPTH_64F,1);
         dst = cvCreateImage(cvGetSize(ImageRe),IPL_DEPTH_64F,2);
         cvDFT(Image_FFT,dst,CV_DXT_INV_SCALE, nonzerorows);
