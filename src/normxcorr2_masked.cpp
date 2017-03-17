@@ -108,16 +108,13 @@ int Xcorr_opencv::Initialization(
     combinedSize[0] = fixedImage.rows + movingImage.rows - 1;
     combinedSize[1] = fixedImage.cols + movingImage.cols - 1;
 
-    optimalSize[0] = cvGetOptimalDFTSize(combinedSize[0]);
-    optimalSize[1] = cvGetOptimalDFTSize(combinedSize[1]);
-    // optimalSize[0] = combinedSize[0];
-    // optimalSize[1] = combinedSize[1];
-    optimalCvsize = cv::Size(optimalSize[1], optimalSize[0]);
+    optimalCvsize = cv::Size(cv::getOptimalDFTSize(combinedSize[1]),
+                             cv::getOptimalDFTSize(combinedSize[0]));
 
-    fnorm = double(1) * double(optimalSize[0]) * double(optimalSize[1]) / 2.0;
+    fnorm = double(1) * double(optimalCvsize.height) * double(optimalCvsize.width) / 2.0;
 
     std::cout << "Dimensions of combined image: " << combinedSize[0] <<" x " << combinedSize[1] << std::endl;
-    std::cout << "Optimal larger dimensions for fast DFT: " << optimalSize[0] <<" x " << optimalSize[1] << std::endl;
+    std::cout << "Optimal larger dimensions for fast DFT: " << optimalCvsize.width <<" x " << optimalCvsize.height << std::endl;
 
     // split image into separate channel images
     sbgr_fixedImage.resize(channelnum);
@@ -236,24 +233,24 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     cv::Mat numberOfOverlapMaskedPixels(optimalCvsize, CV_32FC1);
     cv::Mat numberOfOverlapMaskedPixels_FFT(optimalCvsize, CV_32FC2);
     cv::mulSpectrums(optMovingMask_FFT, optFixedMask_FFT, numberOfOverlapMaskedPixels_FFT, 0);
-    FFT_opencv( numberOfOverlapMaskedPixels_FFT, numberOfOverlapMaskedPixels, FFT_SIGN_FtoT, optimalSize[0]);
+    FFT_opencv( numberOfOverlapMaskedPixels_FFT, numberOfOverlapMaskedPixels, FFT_SIGN_FtoT, optimalCvsize.height);
 
     RoundClampDoubleMatrix(numberOfOverlapMaskedPixels, eps / 1000);
 
     cv::Mat maskCorrelatedFixed(optimalCvsize, CV_32FC1);
     cv::Mat maskCorrelatedFixedFFT(optimalCvsize, CV_32FC2);
     cv::mulSpectrums(optMovingMask_FFT, optFixedImage_FFT, maskCorrelatedFixedFFT, 0);
-    FFT_opencv( maskCorrelatedFixedFFT, maskCorrelatedFixed ,FFT_SIGN_FtoT, optimalSize[0]);
+    FFT_opencv( maskCorrelatedFixedFFT, maskCorrelatedFixed ,FFT_SIGN_FtoT, optimalCvsize.height);
 
     cv::Mat maskCorrelatedRotatedMoving(optimalCvsize, CV_32FC1);
     cv::Mat maskCorrelatedRotatedMovingFFT(optimalCvsize, CV_32FC2);
     cv::mulSpectrums(optFixedMask_FFT,optMovingImage_FFT,maskCorrelatedRotatedMovingFFT,0);
-    FFT_opencv( maskCorrelatedRotatedMovingFFT, maskCorrelatedRotatedMoving, FFT_SIGN_FtoT, optimalSize[0]);
+    FFT_opencv( maskCorrelatedRotatedMovingFFT, maskCorrelatedRotatedMoving, FFT_SIGN_FtoT, optimalCvsize.height);
 
     cv::Mat numerator(optimalCvsize, CV_32FC1);
     cv::Mat numerator_FFT(optimalCvsize, CV_32FC2);
     cv::mulSpectrums(optMovingImage_FFT,optFixedImage_FFT,numerator_FFT,0);
-    FFT_opencv( numerator_FFT, numerator, FFT_SIGN_FtoT, optimalSize[0]);
+    FFT_opencv( numerator_FFT, numerator, FFT_SIGN_FtoT, optimalCvsize.height);
 
     numerator = numerator -( (maskCorrelatedFixed.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
 
@@ -263,7 +260,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     cv::Mat fixedDenom(optimalCvsize, CV_32FC1);
     cv::Mat fixedDenom_FFT(optimalCvsize, CV_32FC2);
     cv::mulSpectrums(optMovingMask_FFT,optFixedSquared_FFT,fixedDenom_FFT,0);
-    FFT_opencv( fixedDenom_FFT, fixedDenom, FFT_SIGN_FtoT, optimalSize[0]);
+    FFT_opencv( fixedDenom_FFT, fixedDenom, FFT_SIGN_FtoT, optimalCvsize.height);
 
     fixedDenom = fixedDenom - ((maskCorrelatedFixed.mul(maskCorrelatedFixed)) / numberOfOverlapMaskedPixels);
     ThresholdLower(fixedDenom,0);
@@ -274,7 +271,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     cv::Mat movingDenom(optimalCvsize, CV_32FC1);
     cv::Mat movingDenom_FFT(optimalCvsize, CV_32FC2);
     cv::mulSpectrums(optFixedMask_FFT,optMovingSquared_FFT,movingDenom_FFT,0);
-    FFT_opencv( movingDenom_FFT, movingDenom, FFT_SIGN_FtoT, optimalSize[0]);
+    FFT_opencv( movingDenom_FFT, movingDenom, FFT_SIGN_FtoT, optimalCvsize.height);
 
     movingDenom = movingDenom - ((maskCorrelatedRotatedMoving.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
     ThresholdLower(movingDenom,0);

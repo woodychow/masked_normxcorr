@@ -133,8 +133,6 @@ class Xcorr_opencv {
 
         /** The combined size of fixedImage and movingImage*/
         int combinedSize[2];
-        /** The optimal size of fixedImage and movingImage*/
-        int optimalSize[2];
         /** CvSize-type variable for the optimal size */
         cv::Size optimalCvsize;
         double fnorm;
