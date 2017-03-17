@@ -407,26 +407,26 @@ int Xcorr_opencv::FFT_opencv(const cv::Mat &Image_mat, IplImage *Image_FFT, int 
 
 //Scan matrix and compare each element with minimum.
 //Assign all values less than minimum to minimum.
-int Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
+int Xcorr_opencv::ThresholdLower(cv::Mat &matImage, float min)
 {
-#if 0
-    const __m256d __minimum = _mm256_set1_pd(minimum);
+#if __AVX2__
+    const __m256 __min = _mm256_set1_ps(min);
 #endif
     for(int i = 0; i < matImage.rows; i++)
     {
         float *rrow = matImage.ptr<float>(i);
         int j = 0;
-#if 0
-        for (; j <= matImage.cols - 4; j += 4)
+#if __AVX2__
+        for (; j <= matImage.cols - 8; j += 8)
         {
-            _mm256_storeu_pd(&rrow[j], _mm256_max_pd(_mm256_loadu_pd(&rrow[j]), __minimum));
+            _mm256_storeu_ps(&rrow[j], _mm256_max_ps(_mm256_loadu_ps(&rrow[j]), __min));
         }
 #endif
         for(; j < matImage.cols; j++)
         {
-            if(rrow[j] < minimum)
+            if(rrow[j] < min)
             {
-                rrow[j] = minimum;
+                rrow[j] = min;
             }
         }
     }
@@ -434,20 +434,20 @@ int Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
 }
 
 //Call round function on each element of the matrix.
-int Xcorr_opencv::RoundClampDoubleMatrix(cv::Mat &matImage, double min)
+int Xcorr_opencv::RoundClampDoubleMatrix(cv::Mat &matImage, float min)
 {
-#if 0
-    const __m256d __min = _mm256_set1_pd(min);
+#if __AVX2__
+    const __m256 __min = _mm256_set1_ps(min);
 #endif
     for(int i =0;i < matImage.rows;i++)
     {
         float *rrow = matImage.ptr<float>(i);
         int j = 0;
-#if 0
-        for (; j <= matImage.cols - 4; j += 4)
+#if __AVX2__
+        for (; j <= matImage.cols - 8; j += 8)
         {
-            _mm256_storeu_pd(&rrow[j], _mm256_max_pd(__min,
-                _mm256_round_pd(_mm256_loadu_pd(&rrow[j]), _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC)));
+            _mm256_storeu_ps(&rrow[j], _mm256_max_ps(__min,
+                _mm256_round_ps(_mm256_loadu_ps(&rrow[j]), _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC)));
         }
 #endif
         for(;j < matImage.cols;j++)

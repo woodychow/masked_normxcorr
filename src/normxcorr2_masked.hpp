@@ -158,7 +158,7 @@ class Xcorr_opencv {
           @param matImage The matrix of a image
           @param minimum The lower limit of the matrix element
          */
-        int ThresholdLower(cv::Mat &matImage, double minimum);
+        int ThresholdLower(cv::Mat &matImage, float min);
 
         /**
           Initializing some member variables, such as:
@@ -207,7 +207,7 @@ class Xcorr_opencv {
           Call round function on each element of the matrix. Return the result in matImage.
           @param matImage The matrix of an image with double-precision data type
          */
-        int RoundClampDoubleMatrix(cv::Mat &matImage, double min);
+        int RoundClampDoubleMatrix(cv::Mat &matImage, float min);
         /**
           Calculate the FFT of image Image_mat and return the result in Image_FFT if sign equals to FFT_SIGN_TtoF. If sign equals to FFT_SIGN_FtoT, calculate the IFFT of Image_FFT and return the result in Image_mat.
           @pre Image_FFT must be non-null pointer.
