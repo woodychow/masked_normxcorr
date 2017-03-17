@@ -208,28 +208,39 @@ int Xcorr_opencv::CalXcorr()
     return 0;
 }
 
+static double la = 0.0;
+static double realfft_time = 0.0;
+
 //Calculate the masked correlation of one channel.
 int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
 {
-
+    double multime = 0.0;
+    double ffttime = 0.0;
     if((!optFixedImage.isContinuous()))
     {
         printf("error: not continuous\n");
         exit(1);
     }
     // Only 6 FFTs are needed.
-    FFT_opencv( optFixedImage,optFixedImage_FFT,FFT_SIGN_TtoF, sbgr_fixedMask[0].rows);
-    FFT_opencv( optMovingImage, optMovingImage_FFT,FFT_SIGN_TtoF, sbgr_movingImage[0].rows);
-    FFT_opencv( optFixedMask, optFixedMask_FFT,FFT_SIGN_TtoF, sbgr_fixedMask[0].rows);
-    FFT_opencv( optMovingMask, optMovingMask_FFT,FFT_SIGN_TtoF, sbgr_movingImage[0].rows);
+    double start = getTickCount();
+    FFT_opencv( optFixedImage,  optFixedImage_FFT,  FFT_SIGN_TtoF, sbgr_fixedMask[0].rows);
+    FFT_opencv( optMovingImage, optMovingImage_FFT, FFT_SIGN_TtoF, sbgr_movingImage[0].rows);
+    FFT_opencv( optFixedMask,   optFixedMask_FFT,   FFT_SIGN_TtoF, sbgr_fixedMask[0].rows);
+    FFT_opencv( optMovingMask,  optMovingMask_FFT,  FFT_SIGN_TtoF, sbgr_movingImage[0].rows);
+    ffttime += getTickCount() - start;
+
 
     // Compute and save these results
     cv::Mat numberOfOverlapMaskedPixels;
     IplImage *numberOfOverlapMaskedPixels_FFT;
     numberOfOverlapMaskedPixels.create(optimalSize[0],optimalSize[1],CV_64FC1);
     numberOfOverlapMaskedPixels_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_64F,2);
+    start = getTickCount();
     cvMulSpectrums(optMovingMask_FFT, optFixedMask_FFT, numberOfOverlapMaskedPixels_FFT, 0);
+    multime += getTickCount() - start;
+    start = getTickCount();
     FFT_opencv( numberOfOverlapMaskedPixels, numberOfOverlapMaskedPixels_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    ffttime += getTickCount() - start;
 
     RoundDoubleMatrix(numberOfOverlapMaskedPixels);
     ThresholdLower(numberOfOverlapMaskedPixels, eps / 1000);
@@ -238,47 +249,71 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     IplImage *maskCorrelatedFixedFFT;
     maskCorrelatedFixed.create(optimalSize[0],optimalSize[1],CV_64FC1);
     maskCorrelatedFixedFFT = cvCreateImage(optimalCvsize,IPL_DEPTH_64F,2);
+    start = getTickCount();
     cvMulSpectrums(optMovingMask_FFT,optFixedImage_FFT,maskCorrelatedFixedFFT,0);
+    multime += getTickCount() - start;
+    start = getTickCount();
     FFT_opencv( maskCorrelatedFixed, maskCorrelatedFixedFFT,FFT_SIGN_FtoT, optimalSize[0]);
+    ffttime += getTickCount() - start;
 
     cv::Mat maskCorrelatedRotatedMoving;
     IplImage *maskCorrelatedRotatedMovingFFT;
     maskCorrelatedRotatedMoving.create(optimalSize[0],optimalSize[1],CV_64FC1);
     maskCorrelatedRotatedMovingFFT = cvCreateImage(optimalCvsize,IPL_DEPTH_64F,2);
+    start = getTickCount();
     cvMulSpectrums(optFixedMask_FFT,optMovingImage_FFT,maskCorrelatedRotatedMovingFFT,0);
+    multime += getTickCount() - start;
+    start = getTickCount();
     FFT_opencv( maskCorrelatedRotatedMoving, maskCorrelatedRotatedMovingFFT,FFT_SIGN_FtoT, optimalSize[0]);
+    ffttime += getTickCount() - start;
 
     cv::Mat numerator;
     IplImage *numerator_FFT;
     numerator.create(optimalSize[0],optimalSize[1],CV_64FC1);
     numerator_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_64F,2);
+    start = getTickCount();
     cvMulSpectrums(optMovingImage_FFT,optFixedImage_FFT,numerator_FFT,0);
+    multime += getTickCount() - start;
+    start = getTickCount();
     FFT_opencv( numerator, numerator_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    ffttime += getTickCount() - start;
 
     numerator = numerator -( (maskCorrelatedFixed.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
 
     optFixedSquared = optFixedImage.mul(optFixedImage);
+    start = getTickCount();
     FFT_opencv( optFixedSquared, optFixedSquared_FFT,FFT_SIGN_TtoF, sbgr_fixedImage[0].rows);
+    ffttime += getTickCount() - start;
 
     cv::Mat fixedDenom;
     IplImage *fixedDenom_FFT;
     fixedDenom.create(optimalSize[0],optimalSize[1],CV_64FC1);
     fixedDenom_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_64F,2);
+    start = getTickCount();
     cvMulSpectrums(optMovingMask_FFT,optFixedSquared_FFT,fixedDenom_FFT,0);
+    multime += getTickCount() - start;
+    start = getTickCount();
     FFT_opencv( fixedDenom, fixedDenom_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    ffttime += getTickCount() - start;
 
     fixedDenom = fixedDenom - ((maskCorrelatedFixed.mul(maskCorrelatedFixed)) / numberOfOverlapMaskedPixels);
     ThresholdLower(fixedDenom,0);
 
     optMovingSquared = optMovingImage.mul(optMovingImage);
+    start = getTickCount();
     FFT_opencv( optMovingSquared, optMovingSquared_FFT,FFT_SIGN_TtoF, sbgr_movingImage[0].rows);
+    ffttime += getTickCount() - start;
 
     cv::Mat movingDenom;
     IplImage *movingDenom_FFT;
     movingDenom.create(optimalSize[0],optimalSize[1],CV_64FC1);
     movingDenom_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_64F,2);
+    start = getTickCount();
     cvMulSpectrums(optFixedMask_FFT,optMovingSquared_FFT,movingDenom_FFT,0);
+    multime += getTickCount() - start;
+    start = getTickCount();
     FFT_opencv( movingDenom, movingDenom_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    ffttime += getTickCount() - start;
 
     movingDenom = movingDenom - ((maskCorrelatedRotatedMoving.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
     ThresholdLower(movingDenom,0);
@@ -303,6 +338,11 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     );
 
     PostProcessing(C, numerator, denom, tol, -1, 1, numberOfOverlapMaskedPixels, this->requiredNumberOfOverlappingPixels);
+
+    printf("mul spectrum %f\n", 1000.0*multime/1e9);
+    printf("fft %f\n", 1000.0*ffttime/1e9);
+    printf("convert scale %f\n", 1000.0*la/1e9);
+    printf("real fft %f\n", 1000.0*realfft_time/1e9);
 
     // Crop out the correct size.
     C_result[curChannel] = C(Range(0,combinedSize[0]),Range(0,combinedSize[1]));
@@ -397,13 +437,18 @@ int Xcorr_opencv::FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, 
              //2 channels (image_Re, image_Im)
              Fourier = cvCreateImage(cvGetSize(src), IPL_DEPTH_64F, 2);
              // Real part conversion from u8 to 64f (double)
+             double start = getTickCount();
              cvConvertScale(src, image_Re, 1, 0);
+             la += getTickCount() - start;
+
              // Imaginary part (zeros)
              cvZero(image_Im);
              // Join real and imaginary parts and stock them in Fourier image
              cvMerge(image_Re, image_Im, 0, 0, Fourier);
              // Application of the forward Fourier transform
+             start = getTickCount();
              cvDFT(Fourier, dst, CV_DXT_FORWARD, nonzerorows);
+             realfft_time += getTickCount() - start;
              cvReleaseImage(&image_Re);
              cvReleaseImage(&image_Im);
              cvReleaseImage(&Fourier);
@@ -418,7 +463,9 @@ int Xcorr_opencv::FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, 
         ImageRe = &Image_Ipl;
         ImageIm = cvCreateImage(cvGetSize(ImageRe),IPL_DEPTH_64F,1);
         dst = cvCreateImage(cvGetSize(ImageRe),IPL_DEPTH_64F,2);
+        double start = getTickCount();
         cvDFT(Image_FFT,dst,CV_DXT_INV_SCALE, nonzerorows);
+        realfft_time += getTickCount() - start;
         cvSplit(dst,ImageRe,ImageIm,0,0);
         cvReleaseImage(&ImageIm);
         cvReleaseImage(&dst);
@@ -428,36 +475,29 @@ int Xcorr_opencv::FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, 
 
 //Scan matrix and compare each element with minimum. 
 //Assign all values less than minimum to minimum.
-int Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
+void Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
 {
+#if __AVX2__
+    __m256d __minimum = _mm256_set1_pd(minimum);
+#endif
     for(int i = 0; i < matImage.rows; i++)
     {
-        for(int j = 0; j < matImage.cols; j++)
+        double *rrow = matImage.ptr<double>(i);
+        int j = 0;
+#if __AVX2__
+        for (; j <= matImage.cols - 4; j += 4)
         {
-            if(matImage.at<double>(i,j) < minimum)
+            _mm256_store_pd(&rrow[j], _mm256_min_pd(_mm256_loadu_pd(&rrow[j]), __minimum));
+        }
+#endif
+        for(; j < matImage.cols; j++)
+        {
+            if(rrow[j] < minimum)
             {
-                matImage.at<double>(i,j) = minimum;
+                rrow[j] = minimum;
             }
         }
     }
-    return 0;
-}
-
-//Scan matrix and compare each element with maximum. 
-//Assign all values larger than maximum to maximum.
-int Xcorr_opencv::ThresholdUpper(cv::Mat &matImage, double maximum)
-{
-    for(int i =0; i < matImage.rows; i++)
-    {
-        for(int j = 0; j < matImage.cols; j++)
-        {
-            if(matImage.at<double>(i,j) > maximum)
-            {
-                matImage.at<double>(i,j) = maximum;
-            }
-        }
-    }
-    return 0;
 }
 
 //Call round function on each element of the matrix.

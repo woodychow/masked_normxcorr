@@ -176,14 +176,8 @@ class Xcorr_opencv {
           @param matImage The matrix of a image
           @param minimum The lower limit of the matrix element
          */
-        int ThresholdLower(cv::Mat &matImage, double minimum);
+        void ThresholdLower(cv::Mat &matImage, double minimum);
 
-        /**
-          Scan the matrix and compare each element with maximum. If the element is larger than maximum, the element shall be assigned to maximum. Return the result in matImage.
-          @param matImage The matrix of an image
-          @param maximum The upper limit of the matrix element
-         */
-        int ThresholdUpper(cv::Mat &matImage, double maximum);
         /**
           Initializing some member variables, such as:
           1.  fixedImage
