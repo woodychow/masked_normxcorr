@@ -179,12 +179,6 @@ class Xcorr_opencv {
         int ThresholdLower(cv::Mat &matImage, double minimum);
 
         /**
-          Scan the matrix and compare each element with maximum. If the element is larger than maximum, the element shall be assigned to maximum. Return the result in matImage.
-          @param matImage The matrix of an image
-          @param maximum The upper limit of the matrix element
-         */
-        int ThresholdUpper(cv::Mat &matImage, double maximum);
-        /**
           Initializing some member variables, such as:
           1.  fixedImage
           2.  fixedMask
@@ -231,7 +225,7 @@ class Xcorr_opencv {
           Call round function on each element of the matrix. Return the result in matImage.
           @param matImage The matrix of an image with double-precision data type
          */
-        int RoundDoubleMatrix(cv::Mat &matImage);
+        int RoundClampDoubleMatrix(cv::Mat &matImage, double min);
         /**
           Calculate the FFT of image Image_mat and return the result in Image_FFT if sign equals to FFT_SIGN_TtoF. If sign equals to FFT_SIGN_FtoT, calculate the IFFT of Image_FFT and return the result in Image_mat.
           @pre Image_FFT must be non-null pointer.

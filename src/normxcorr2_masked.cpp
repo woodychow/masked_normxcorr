@@ -32,6 +32,10 @@
 #include <math.h>
 #include "normxcorr2_masked.hpp"
 
+#if __AVX2__
+    #include <immintrin.h>
+#endif
+
 namespace cv {
 
 //Xcorr_opencv constructor
@@ -231,8 +235,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     cvMulSpectrums(optMovingMask_FFT, optFixedMask_FFT, numberOfOverlapMaskedPixels_FFT, 0);
     FFT_opencv( numberOfOverlapMaskedPixels, numberOfOverlapMaskedPixels_FFT,FFT_SIGN_FtoT, optimalSize[0]);
 
-    RoundDoubleMatrix(numberOfOverlapMaskedPixels);
-    ThresholdLower(numberOfOverlapMaskedPixels, eps / 1000);
+    RoundClampDoubleMatrix(numberOfOverlapMaskedPixels, eps / 1000);
 
     cv::Mat maskCorrelatedFixed;
     IplImage *maskCorrelatedFixedFFT;
@@ -430,30 +433,24 @@ int Xcorr_opencv::FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, 
 //Assign all values less than minimum to minimum.
 int Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
 {
+#if __AVX2__
+    const __m256d __minimum = _mm256_set1_pd(minimum);
+#endif
     for(int i = 0; i < matImage.rows; i++)
     {
-        for(int j = 0; j < matImage.cols; j++)
+        double *rrow = matImage.ptr<double>(i);
+        int j = 0;
+#if __AVX2__
+        for (; j <= matImage.cols - 4; j += 4)
         {
-            if(matImage.at<double>(i,j) < minimum)
-            {
-                matImage.at<double>(i,j) = minimum;
-            }
+            _mm256_storeu_pd(&rrow[j], _mm256_max_pd(_mm256_loadu_pd(&rrow[j]), __minimum));
         }
-    }
-    return 0;
-}
-
-//Scan matrix and compare each element with maximum. 
-//Assign all values larger than maximum to maximum.
-int Xcorr_opencv::ThresholdUpper(cv::Mat &matImage, double maximum)
-{
-    for(int i =0; i < matImage.rows; i++)
-    {
-        for(int j = 0; j < matImage.cols; j++)
+#endif
+        for(; j < matImage.cols; j++)
         {
-            if(matImage.at<double>(i,j) > maximum)
+            if(rrow[j] < minimum)
             {
-                matImage.at<double>(i,j) = maximum;
+                rrow[j] = minimum;
             }
         }
     }
@@ -461,13 +458,25 @@ int Xcorr_opencv::ThresholdUpper(cv::Mat &matImage, double maximum)
 }
 
 //Call round function on each element of the matrix.
-int Xcorr_opencv::RoundDoubleMatrix(cv::Mat &matImage)
+int Xcorr_opencv::RoundClampDoubleMatrix(cv::Mat &matImage, double min)
 {
+#if __AVX2__
+    const __m256d __min = _mm256_set1_pd(min);
+#endif
     for(int i =0;i < matImage.rows;i++)
     {
-        for(int j = 0;j < matImage.cols;j++)
+        double *rrow = matImage.ptr<double>(i);
+        int j = 0;
+#if __AVX2__
+        for (; j <= matImage.cols - 4; j += 4)
         {
-            matImage.at<double>(i,j) = round(matImage.at<double>(i,j));
+            _mm256_storeu_pd(&rrow[j], _mm256_max_pd(__min,
+                _mm256_round_pd(_mm256_loadu_pd(&rrow[j]), _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC)));
+        }
+#endif
+        for(;j < matImage.cols;j++)
+        {
+            rrow[j] = round(rrow[j]);
         }
     }
     return 0;
