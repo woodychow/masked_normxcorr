@@ -31,6 +31,10 @@
 
 #include <math.h>
 #include "normxcorr2_masked.hpp"
+#undef __AVX2__
+#if __AVX2__
+    #include <immintrin.h>
+#endif
 
 namespace cv {
 
@@ -242,8 +246,7 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     FFT_opencv( numberOfOverlapMaskedPixels, numberOfOverlapMaskedPixels_FFT,FFT_SIGN_FtoT, optimalSize[0]);
     ffttime += getTickCount() - start;
 
-    RoundDoubleMatrix(numberOfOverlapMaskedPixels);
-    ThresholdLower(numberOfOverlapMaskedPixels, eps / 1000);
+    RoundClampDoubleMatrix(numberOfOverlapMaskedPixels, eps / 1000);
 
     cv::Mat maskCorrelatedFixed;
     IplImage *maskCorrelatedFixedFFT;
@@ -478,7 +481,7 @@ int Xcorr_opencv::FFT_opencv(cv::Mat &Image_mat, IplImage *Image_FFT, int sign, 
 void Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
 {
 #if __AVX2__
-    __m256d __minimum = _mm256_set1_pd(minimum);
+    const __m256d __minimum = _mm256_set1_pd(minimum);
 #endif
     for(int i = 0; i < matImage.rows; i++)
     {
@@ -487,7 +490,7 @@ void Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
 #if __AVX2__
         for (; j <= matImage.cols - 4; j += 4)
         {
-            _mm256_store_pd(&rrow[j], _mm256_min_pd(_mm256_loadu_pd(&rrow[j]), __minimum));
+            _mm256_storeu_pd(&rrow[j], _mm256_min_pd(_mm256_loadu_pd(&rrow[j]), __minimum));
         }
 #endif
         for(; j < matImage.cols; j++)
@@ -501,16 +504,27 @@ void Xcorr_opencv::ThresholdLower(cv::Mat &matImage, double minimum)
 }
 
 //Call round function on each element of the matrix.
-int Xcorr_opencv::RoundDoubleMatrix(cv::Mat &matImage)
+void Xcorr_opencv::RoundClampDoubleMatrix(cv::Mat &matImage, double min)
 {
+#if __AVX2__
+    const __m256d __min = _mm256_set1_pd(min);
+#endif
     for(int i =0;i < matImage.rows;i++)
     {
-        for(int j = 0;j < matImage.cols;j++)
+        double *rrow = matImage.ptr<double>(i);
+        int j = 0;
+#if __AVX2__
+        for (; j <= matImage.cols - 4; j += 4)
         {
-            matImage.at<double>(i,j) = round(matImage.at<double>(i,j));
+            _mm256_storeu_pd(&rrow[j], _mm256_min_pd(__min,
+                _mm256_round_pd(_mm256_loadu_pd(&rrow[j]), _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC)));
+        }
+#endif
+        for(;j < matImage.cols;j++)
+        {
+            rrow[j] = round(rrow[j]);
         }
     }
-    return 0;
 }
 
 //Get results for one channel.

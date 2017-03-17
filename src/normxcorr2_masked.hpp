@@ -225,7 +225,7 @@ class Xcorr_opencv {
           Call round function on each element of the matrix. Return the result in matImage.
           @param matImage The matrix of an image with double-precision data type
          */
-        int RoundDoubleMatrix(cv::Mat &matImage);
+        void RoundClampDoubleMatrix(cv::Mat &matImage, double min);
         /**
           Calculate the FFT of image Image_mat and return the result in Image_FFT if sign equals to FFT_SIGN_TtoF. If sign equals to FFT_SIGN_FtoT, calculate the IFFT of Image_FFT and return the result in Image_mat.
           @pre Image_FFT must be non-null pointer.
