@@ -112,17 +112,17 @@ class Xcorr_opencv {
         cv::Mat optMovingSquared;
 
         /** FFT of optFixedImage*/
-        IplImage *optFixedImage_FFT;
+        cv::Mat optFixedImage_FFT;
         /** FFT of optFixedMask*/
-        IplImage *optFixedMask_FFT;
+        cv::Mat optFixedMask_FFT;
         /** FFT of optMovingImage*/
-        IplImage *optMovingImage_FFT;
+        cv::Mat optMovingImage_FFT;
         /** FFT of optMovingMask*/
-        IplImage *optMovingMask_FFT;
+        cv::Mat optMovingMask_FFT;
         /** FFT of optFixedSquared*/
-        IplImage *optFixedSquared_FFT;
+        cv::Mat optFixedSquared_FFT;
         /** FFT of optMovingSquared*/
-        IplImage *optMovingSquared_FFT;
+        cv::Mat optMovingSquared_FFT;
 
         /** 
           Relative intensity of all channels' masked correlation. 
@@ -137,7 +137,7 @@ class Xcorr_opencv {
         /** The optimal size of fixedImage and movingImage*/
         int optimalSize[2];
         /** CvSize-type variable for the optimal size */
-        CvSize optimalCvsize;
+        cv::Size optimalCvsize;
         double fnorm;
         /** The smallest non-zero positive number. */
         double eps;
@@ -216,7 +216,7 @@ class Xcorr_opencv {
           @param sign A sign for designating FFT or IFFT calculation
           @param nonzerorows The expected rows of Image_FFT in FFT calculation or Image_mat in IFFT calculation. A appropriate rows can speed up the calculation.
          */
-        int FFT_opencv(const cv::Mat &Image_mat, IplImage *Image_FFT, int sign, int nonzerorows=0);
+        int FFT_opencv(const cv::Mat &src, cv::Mat &dst, int sign, int nonzerorows=0);
 
         /**
           Get the results of one channel.

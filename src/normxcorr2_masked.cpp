@@ -112,7 +112,7 @@ int Xcorr_opencv::Initialization(
     optimalSize[1] = cvGetOptimalDFTSize(combinedSize[1]);
     // optimalSize[0] = combinedSize[0];
     // optimalSize[1] = combinedSize[1];
-    optimalCvsize = cvSize(optimalSize[1], optimalSize[0]);
+    optimalCvsize = cv::Size(optimalSize[1], optimalSize[0]);
 
     fnorm = double(1) * double(optimalSize[0]) * double(optimalSize[1]) / 2.0;
 
@@ -133,18 +133,23 @@ int Xcorr_opencv::Initialization(
     split(movingMask,sbgr_movingMask);
 
     // initialize matrices
-    optFixedImage.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    optFixedImage_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    optFixedMask.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    optFixedMask_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    optMovingImage.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    optMovingImage_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    optMovingMask.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    optMovingMask_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    optFixedSquared.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    optFixedSquared_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    optMovingSquared.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    optMovingSquared_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
+    optFixedImage.create(optimalCvsize, CV_32FC1);
+    optFixedImage_FFT.create(optimalCvsize, CV_32FC2);
+
+    optFixedMask.create(optimalCvsize, CV_32FC1);
+    optFixedMask_FFT.create(optimalCvsize, CV_32FC2);
+
+    optMovingImage.create(optimalCvsize, CV_32FC1);
+    optMovingImage_FFT.create(optimalCvsize, CV_32FC2);
+
+    optMovingMask.create(optimalCvsize, CV_32FC1);
+    optMovingMask_FFT.create(optimalCvsize, CV_32FC2);
+
+    optFixedSquared.create(optimalCvsize, CV_32FC1);
+    optFixedSquared_FFT.create(optimalCvsize, CV_32FC2);
+
+    optMovingSquared.create(optimalCvsize, CV_32FC1);
+    optMovingSquared_FFT.create(optimalCvsize, CV_32FC2);
 
     /*
     // display images
@@ -169,12 +174,12 @@ int Xcorr_opencv::CalXcorr()
 
     for(int i = 0; i < channelnum; i++)
     {
-        optFixedImage = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
-        optFixedMask = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
-        optMovingImage = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
-        optMovingMask = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
-        optFixedSquared = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
-        optMovingSquared = Mat::zeros(optimalSize[0],optimalSize[1],CV_32FC1);
+        optFixedImage = Mat::zeros(optimalCvsize, CV_32FC1);
+        optFixedMask = Mat::zeros(optimalCvsize, CV_32FC1);
+        optMovingImage = Mat::zeros(optimalCvsize, CV_32FC1);
+        optMovingMask = Mat::zeros(optimalCvsize, CV_32FC1);
+        optFixedSquared = Mat::zeros(optimalCvsize, CV_32FC1);
+        optMovingSquared = Mat::zeros(optimalCvsize, CV_32FC1);
         for(int j = 0; j < sbgr_fixedImage[i].rows; j++)
         {
             for(int k = 0; k < sbgr_fixedImage[i].cols; k++)
@@ -228,47 +233,37 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     FFT_opencv( optMovingMask, optMovingMask_FFT,FFT_SIGN_TtoF, sbgr_movingImage[0].rows);
 
     // Compute and save these results
-    cv::Mat numberOfOverlapMaskedPixels;
-    IplImage *numberOfOverlapMaskedPixels_FFT;
-    numberOfOverlapMaskedPixels.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    numberOfOverlapMaskedPixels_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    cvMulSpectrums(optMovingMask_FFT, optFixedMask_FFT, numberOfOverlapMaskedPixels_FFT, 0);
-    FFT_opencv( numberOfOverlapMaskedPixels, numberOfOverlapMaskedPixels_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    cv::Mat numberOfOverlapMaskedPixels(optimalCvsize, CV_32FC1);
+    cv::Mat numberOfOverlapMaskedPixels_FFT(optimalCvsize, CV_32FC2);
+    cv::mulSpectrums(optMovingMask_FFT, optFixedMask_FFT, numberOfOverlapMaskedPixels_FFT, 0);
+    FFT_opencv( numberOfOverlapMaskedPixels_FFT, numberOfOverlapMaskedPixels, FFT_SIGN_FtoT, optimalSize[0]);
 
     RoundClampDoubleMatrix(numberOfOverlapMaskedPixels, eps / 1000);
 
-    cv::Mat maskCorrelatedFixed;
-    IplImage *maskCorrelatedFixedFFT;
-    maskCorrelatedFixed.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    maskCorrelatedFixedFFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    cvMulSpectrums(optMovingMask_FFT,optFixedImage_FFT,maskCorrelatedFixedFFT,0);
-    FFT_opencv( maskCorrelatedFixed, maskCorrelatedFixedFFT,FFT_SIGN_FtoT, optimalSize[0]);
+    cv::Mat maskCorrelatedFixed(optimalCvsize, CV_32FC1);
+    cv::Mat maskCorrelatedFixedFFT(optimalCvsize, CV_32FC2);
+    cv::mulSpectrums(optMovingMask_FFT, optFixedImage_FFT, maskCorrelatedFixedFFT, 0);
+    FFT_opencv( maskCorrelatedFixedFFT, maskCorrelatedFixed ,FFT_SIGN_FtoT, optimalSize[0]);
 
-    cv::Mat maskCorrelatedRotatedMoving;
-    IplImage *maskCorrelatedRotatedMovingFFT;
-    maskCorrelatedRotatedMoving.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    maskCorrelatedRotatedMovingFFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    cvMulSpectrums(optFixedMask_FFT,optMovingImage_FFT,maskCorrelatedRotatedMovingFFT,0);
-    FFT_opencv( maskCorrelatedRotatedMoving, maskCorrelatedRotatedMovingFFT,FFT_SIGN_FtoT, optimalSize[0]);
+    cv::Mat maskCorrelatedRotatedMoving(optimalCvsize, CV_32FC1);
+    cv::Mat maskCorrelatedRotatedMovingFFT(optimalCvsize, CV_32FC2);
+    cv::mulSpectrums(optFixedMask_FFT,optMovingImage_FFT,maskCorrelatedRotatedMovingFFT,0);
+    FFT_opencv( maskCorrelatedRotatedMovingFFT, maskCorrelatedRotatedMoving, FFT_SIGN_FtoT, optimalSize[0]);
 
-    cv::Mat numerator;
-    IplImage *numerator_FFT;
-    numerator.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    numerator_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    cvMulSpectrums(optMovingImage_FFT,optFixedImage_FFT,numerator_FFT,0);
-    FFT_opencv( numerator, numerator_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    cv::Mat numerator(optimalCvsize, CV_32FC1);
+    cv::Mat numerator_FFT(optimalCvsize, CV_32FC2);
+    cv::mulSpectrums(optMovingImage_FFT,optFixedImage_FFT,numerator_FFT,0);
+    FFT_opencv( numerator_FFT, numerator, FFT_SIGN_FtoT, optimalSize[0]);
 
     numerator = numerator -( (maskCorrelatedFixed.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
 
     optFixedSquared = optFixedImage.mul(optFixedImage);
     FFT_opencv( optFixedSquared, optFixedSquared_FFT,FFT_SIGN_TtoF, sbgr_fixedImage[0].rows);
 
-    cv::Mat fixedDenom;
-    IplImage *fixedDenom_FFT;
-    fixedDenom.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    fixedDenom_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    cvMulSpectrums(optMovingMask_FFT,optFixedSquared_FFT,fixedDenom_FFT,0);
-    FFT_opencv( fixedDenom, fixedDenom_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    cv::Mat fixedDenom(optimalCvsize, CV_32FC1);
+    cv::Mat fixedDenom_FFT(optimalCvsize, CV_32FC2);
+    cv::mulSpectrums(optMovingMask_FFT,optFixedSquared_FFT,fixedDenom_FFT,0);
+    FFT_opencv( fixedDenom_FFT, fixedDenom, FFT_SIGN_FtoT, optimalSize[0]);
 
     fixedDenom = fixedDenom - ((maskCorrelatedFixed.mul(maskCorrelatedFixed)) / numberOfOverlapMaskedPixels);
     ThresholdLower(fixedDenom,0);
@@ -276,19 +271,17 @@ int Xcorr_opencv::CalculateOneChannelXcorr(int curChannel)
     optMovingSquared = optMovingImage.mul(optMovingImage);
     FFT_opencv( optMovingSquared, optMovingSquared_FFT,FFT_SIGN_TtoF, sbgr_movingImage[0].rows);
 
-    cv::Mat movingDenom;
-    IplImage *movingDenom_FFT;
-    movingDenom.create(optimalSize[0],optimalSize[1],CV_32FC1);
-    movingDenom_FFT = cvCreateImage(optimalCvsize,IPL_DEPTH_32F,2);
-    cvMulSpectrums(optFixedMask_FFT,optMovingSquared_FFT,movingDenom_FFT,0);
-    FFT_opencv( movingDenom, movingDenom_FFT,FFT_SIGN_FtoT, optimalSize[0]);
+    cv::Mat movingDenom(optimalCvsize, CV_32FC1);
+    cv::Mat movingDenom_FFT(optimalCvsize, CV_32FC2);
+    cv::mulSpectrums(optFixedMask_FFT,optMovingSquared_FFT,movingDenom_FFT,0);
+    FFT_opencv( movingDenom_FFT, movingDenom, FFT_SIGN_FtoT, optimalSize[0]);
 
     movingDenom = movingDenom - ((maskCorrelatedRotatedMoving.mul(maskCorrelatedRotatedMoving)) / numberOfOverlapMaskedPixels);
     ThresholdLower(movingDenom,0);
 
     cv::Mat denom = fixedDenom.mul(movingDenom);
     denom.convertTo(denom, CV_64FC1); // Have to convert to double here
-    sqrt(denom,denom);
+    sqrt(denom, denom);
 
     // denom is the sqrt of the product of positive numbers so it must be
     // positive or zero.  Therefore, the only danger in dividing the numerator
@@ -359,47 +352,31 @@ double Xcorr_opencv::MaxAbsValue(cv::Mat &matImage )
 //Calculate the FFT of image Image_mat and return the result in Image_FFT
 //if sign equals to FFT_SIGN_TtoF. If sign equals to FFT_SIGN_FtoT,
 //calculate the IFFT of Image_FFT and return the result in Image_mat.
-int Xcorr_opencv::FFT_opencv(const cv::Mat &Image_mat, IplImage *Image_FFT, int sign, int nonzerorows)
+int Xcorr_opencv::FFT_opencv(const cv::Mat &src, cv::Mat &dst, int sign, int nonzerorows)
 {
     // IPP DFT function is only called when nonzerorows = 0
     nonzerorows = 0;
     if(sign == FFT_SIGN_TtoF)
     {
-        IplImage *dst = Image_FFT;
-        const IplImage Image_Ipl = IplImage(Image_mat);
-        const IplImage *src = &Image_Ipl;
         {
-             IplImage *image_Re = 0, *image_Im = 0, *Fourier = 0;
-             image_Re = cvCreateImage(cvGetSize(src), IPL_DEPTH_32F, 1);
-             //Imaginary part
-             image_Im = cvCreateImage(cvGetSize(src), IPL_DEPTH_32F, 1);
-             //2 channels (image_Re, image_Im)
-             Fourier = cvCreateImage(cvGetSize(src), IPL_DEPTH_32F, 2);
-             // Real part conversion from u8 to 64f (double)
-             cvConvertScale(src, image_Re, 1, 0);
-             // Imaginary part (zeros)
-             cvZero(image_Im);
-             // Join real and imaginary parts and stock them in Fourier image
-             cvMerge(image_Re, image_Im, 0, 0, Fourier);
-             // Application of the forward Fourier transform
-             cvDFT(Fourier, dst, CV_DXT_FORWARD, nonzerorows);
-             cvReleaseImage(&image_Re);
-             cvReleaseImage(&image_Im);
-             cvReleaseImage(&Fourier);
+            cv::Mat Re;
+            src.convertTo(Re, CV_32FC1, 1, 0);
+            cv::Mat Im = cv::Mat::zeros(src.rows, src.cols, CV_32FC1);
+
+            cv::Mat Fourier;
+            const Mat planes[2] = {Re, Im};
+            cv::merge(planes, 2, Fourier);
+
+            cv::dft(Fourier, dst, CV_DXT_FORWARD, nonzerorows);
         }
     }
     else
     {
-        IplImage *ImageIm;
-        IplImage *dst;
-        IplImage Image_Ipl = IplImage(Image_mat);
-        IplImage *ImageRe = &Image_Ipl;
-        ImageIm = cvCreateImage(cvGetSize(ImageRe),IPL_DEPTH_32F,1);
-        dst = cvCreateImage(cvGetSize(ImageRe),IPL_DEPTH_32F,2);
-        cvDFT(Image_FFT,dst,CV_DXT_INV_SCALE, nonzerorows);
-        cvSplit(dst,ImageRe,ImageIm,0,0);
-        cvReleaseImage(&ImageIm);
-        cvReleaseImage(&dst);
+        cv::Mat temp, Im;
+        cv::dft(src, temp, CV_DXT_INV_SCALE, nonzerorows);
+
+        Mat planes[2] = {dst, Im};
+        cv::split(temp, planes);
     }
     return 0;
 }
